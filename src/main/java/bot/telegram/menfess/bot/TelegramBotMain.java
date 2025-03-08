@@ -56,6 +56,9 @@ public class TelegramBotMain extends TelegramLongPollingBot {
                 handleTopUpCommand(chatId, text);
             } else if (text.contains("/delete")) {
                 handleDeleteCommand(update, chatId, text);
+            } else if (text.contains("/list")) {
+
+
             }
         } else {
             handleCallbackQuery(update);
@@ -67,13 +70,10 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             sendMessage(new SendCommand().helpDeleteMessage("Silahkan masukkan id pesan yang ingin dihapus", chatId));
         } else {
             Messaging messaging = messageService.findMessage(text.replace("/delete ", ""));
-            if (messaging != null) {
+            if (messaging != null && messaging.getMessageStatus() != MessageStatus.DELETED) {
                 Thread.startVirtualThread(() -> {
                     messaging.setMessageStatus(MessageStatus.DELETED);
                     messageService.saveMessage(messaging);
-                });
-
-                Thread.startVirtualThread(() -> {
                     sendMessage(SendMessage.builder()
                             .text("Sukses Delete Message")
                             .chatId(chatId)
@@ -83,6 +83,14 @@ public class TelegramBotMain extends TelegramLongPollingBot {
                             .chatId(new RulesCofiguration().getGetChannelId())
                             .build());
                 });
+            } else {
+                Thread.startVirtualThread(() -> {
+                    sendMessage(SendMessage.builder()
+                            .text("Pesan tidak ditemukan")
+                            .chatId(chatId)
+                            .build());
+                });
+
             }
 
         }
@@ -112,7 +120,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             sendMessage(new SendCommand().helpSendMenfess(update));
         } else if (users.getLimitService() > 0) {
             handleSendWithLimit(update, chatId, text, users);
-        } else if (users.getLimitService() >= 0 && users.getLevel() == UsersLevel.PREMIUM && users.getBalance() > new RulesCofiguration().getPayAmountAfterLimit()) {
+        } else if (users.getLevel() == UsersLevel.PREMIUM && users.getBalance() > new RulesCofiguration().getPayAmountAfterLimit()) {
             handleSendWithBalance(update, chatId, text, users);
         } else {
             sendMessage(new SendCommand().errorUsersNotHaveLimit("Anda tidak memiliki limit", chatId));
@@ -180,7 +188,6 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             }
         }
     }
-
     private Messaging insertMessage(Update update, long messageId) {
         Messaging messaging = Messaging.builder()
                 .messageStatus(MessageStatus.SENT)
@@ -257,8 +264,6 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             throw new RuntimeException(e);
         }
     }
-
-
     @Override
     public String getBotUsername() {
         return botName;

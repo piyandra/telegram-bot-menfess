@@ -20,10 +20,6 @@ public class SendCommand {
         return createMessage(TextUtils.help, update.getMessage().getChatId());
     }
 
-    public SendMessage help(Update update) {
-        return createMessage(TextUtils.helpSendMenfess, update.getMessage().getChatId());
-    }
-
     public SendMessage message(String message, long channel) {
         return createMessage(message, channel);
     }
