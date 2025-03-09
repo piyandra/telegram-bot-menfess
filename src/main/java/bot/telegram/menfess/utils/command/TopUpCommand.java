@@ -5,7 +5,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 
 public class TopUpCommand {
-    public SendMessage topUpMessage(long chatId, boolean isSuccess) {
+    public SendMessage topUpMessage(long chatId, boolean isSuccess, String saldo) {
         return SendMessage.builder()
                 .chatId(chatId)
                 .text(isSuccess ? TextUtils.topUpSuccess : TextUtils.topUpFailed)

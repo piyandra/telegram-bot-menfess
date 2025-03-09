@@ -24,7 +24,7 @@ public class WebhookReceiver {
     @PostMapping
     public ResponseEntity<String> handleWebhook(@RequestBody Map<String, Object> payload) {
         log.warn("Received Webhook");
-        processWebhook(payload);
+        Thread.startVirtualThread(() -> processWebhook(payload));
 
         return ResponseEntity.ok("Received");
 

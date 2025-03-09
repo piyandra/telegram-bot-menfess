@@ -57,8 +57,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             } else if (text.contains("/delete")) {
                 handleDeleteCommand(update, chatId, text);
             } else if (text.contains("/list")) {
-
-
+                // leesss
             }
         } else {
             handleCallbackQuery(update);
@@ -112,15 +111,15 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         Users users = userService.findUsers(chatId);
         log.info(users.getLevel().toString());
 
-        if (users.getBalance() == 0 && users.getLimitService() == 0) {
+        if (users.getBalance() <= 0 && users.getLimitService() <= 0) {
             Thread.startVirtualThread(() -> userService.changeLevel(chatId, UsersLevel.FREE));
         }
 
         if (text.equals("/send")) {
             sendMessage(new SendCommand().helpSendMenfess(update));
-        } else if (users.getLimitService() > 0) {
+        } else if (users.getLimitService() > 0 && text.contains(update.getMessage().getChat().getUserName())) {
             handleSendWithLimit(update, chatId, text, users);
-        } else if (users.getLevel() == UsersLevel.PREMIUM && users.getBalance() > new RulesCofiguration().getPayAmountAfterLimit()) {
+        } else if (users.getLevel() == UsersLevel.PREMIUM && users.getBalance() >= new RulesCofiguration().getPayAmountAfterLimit()) {
             handleSendWithBalance(update, chatId, text, users);
         } else {
             sendMessage(new SendCommand().errorUsersNotHaveLimit("Anda tidak memiliki limit", chatId));
@@ -148,6 +147,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             Messaging messaging1 = insertMessage(update, messageing.getMessageId());
             log.warn("Message Id {}", messaging1.getMessageId());
             sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + messaging1.getId() + "</code>", chatId));
+            sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + convertToRupiah(users.getBalance()), chatId));
         });
     }
 
@@ -165,6 +165,8 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             userService.deductBalance(chatId, new RulesCofiguration().getPayAmountAfterLimit());
             Messaging messaging1 = insertMessage(update, messageing.getMessageId());
             sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + messaging1.getId() + "</code>", chatId));
+            Users users = userService.findUsers(chatId);
+            sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + convertToRupiah(users.getBalance()), chatId));
         });
     }
 
@@ -174,7 +176,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         } else {
             Transaction transaction = transactionService.findNotClaimedTransaction(text.replace("/topup ", ""), TransactionStatus.SUCCESS);
             if (transaction != null) {
-                sendMessage(new TopUpCommand().topUpMessage(chatId, true));
+                sendMessage(new TopUpCommand().topUpMessage(chatId, true, String.valueOf(transaction.getPrice())));
                 Thread.startVirtualThread(() -> {
                     transaction.setTransactionStatus(TransactionStatus.ACCEPT);
                     transaction.setUserId(chatId);
@@ -184,7 +186,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
                     transactionService.saveTransaction(transaction);
                 });
             } else {
-                sendMessage(new TopUpCommand().topUpMessage(chatId, false));
+                sendMessage(new TopUpCommand().topUpMessage(chatId, false, null));
             }
         }
     }
@@ -263,6 +265,10 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String convertToRupiah(long amount) {
+        return "Rp" + String.format("%,d", amount).replace(',', '.');
     }
     @Override
     public String getBotUsername() {

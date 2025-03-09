@@ -18,23 +18,19 @@ public class TextUtils {
     public static String account = "Selamat datang di bot menfess, detail user anda adalah :";
 
     public static String help = """
-            Untuk menggunakan bot ini, silahkan ikuti langkah berikut :
-            1. Daftar sebagai pengguna dengan menekan tombol 'Mendaftar'.
-            2. Jika sudah terdaftar, tekan tombol 'Akun Anda' untuk melihat detail akun anda.
-            3. Anda bisa melakukan topup dengan mengirim command /topup {id}.
-            4. Anda bisa melakukan pengiriman pesan dengan mengirim command /send {pesan}.
-            5. Anda bisa melihat list pesan anda dengan mengirim command /list.
-            6. Anda bisa menghapus pesan anda dengan mengirim command /delete {pesan}.
-            7. Anda bisa mengirim pesan anonim dengan mengirim command /anon {pesan}.
-            
-             <b>Hanya berlaku jika member anda premium</b>
-            8. Anda bisa upgrade dengan top up minimal Rp5.000
-            9. Setiap pesan yang anda kirim akan dikenakan biaya Rp100
-            10. Jika saldo anda habis, dan limit free anda habis, anda tidak bisa mengirim pesan""";
+            ☐ Cara daftar member fwbess melalui trakteer \s
+            ├ 1. Kirim /start untuk daftar akun dan Informasi Saldo anda \s
+            ├ 2. Membayar nominal berapapun untuk mendaftar Premium\s
+            ├ 3. Kirim /send {pesan anda} untuk mengirim pesan ke base menfess \s
+            └ 4. Kirim /topup {kode transaksi} untuk top up saldo anda \s
+            └ 4. Benefit free hanya diberikan sebanyak 3 kali send \s
+            └ 4. Benefit Premium sesuai jumlah top up saldo anda \s
+            └ Note: jika sudah daftar member bot fwbess, tidak perlu daftar lagi.
+            """;
 
     public static String helpSendMenfess = "Gunakan command /send lalu diikuti dengan pesan yang anda kirim";
 
-    public static String topUpSuccess = "Top up berhasil. Saldo anda sekarang adalah :";
+    public static String topUpSuccess = "Top up berhasil. Saldo anda bertambah :";
 
     public static String topUpFailed = "Top up gagal. Kode transaksi tidak ditemukan, Silahkan coba lagi";
 
