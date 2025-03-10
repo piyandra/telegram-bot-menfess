@@ -10,5 +10,6 @@ public class RulesCofiguration {
     public int payAmountAfterLimit = 100;
     public boolean forceShowUsername = true;
     public long getChannelId = -1002161694809L;
+    public int payAmountToDelete = 500;
 
 }

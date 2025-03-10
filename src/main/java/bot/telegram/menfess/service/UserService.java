@@ -15,7 +15,7 @@ public class UserService {
         this.usersRepository = usersRepository;
     }
 
-    private UsersRepository usersRepository;
+    private final UsersRepository usersRepository;
 
     public Users findUsers (long id) {
         return usersRepository.findById(id).orElse(null);
@@ -24,34 +24,32 @@ public class UserService {
     public Users registerUser(Users users) {
         return usersRepository.save(users);
     }
-    public Users changeLevel(Long id, UsersLevel level) {
-        return usersRepository.findById(id).map(users -> {
+    public void changeLevel(Long id, UsersLevel level) {
+        usersRepository.findById(id).map(users -> {
             users.setLevel(level);
             return usersRepository.save(users);
-        }).orElse(null);
+        });
     }
-    public Users topUpBalance(Long id, int balance) {
+    public void topUpBalance(Long id, int balance) {
         Users users = usersRepository.findById(id).orElse(null);
         if (users != null) {
             users.setBalance(users.getBalance() + balance);
-            return usersRepository.save(users);
+            usersRepository.save(users);
         }
-        return null;
     }
 
-    public Users deductBalance(Long id, int balance) {
+    public void deductBalance(Long id, int balance) {
         Users users = usersRepository.findById(id).orElse(null);
         if (users != null) {
             users.setBalance(users.getBalance() - balance);
-            return usersRepository.save(users);
+            usersRepository.save(users);
         }
-        return null;
     }
-    public Users changeLimitService(Long id, long limitService) {
-        return usersRepository.findById(id).map(users -> {
+    public void changeLimitService(Long id, long limitService) {
+        usersRepository.findById(id).map(users -> {
             users.setLimitService(limitService);
             return usersRepository.save(users);
-        }).orElse(null);
+        });
     }
 
 }

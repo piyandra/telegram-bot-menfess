@@ -5,7 +5,7 @@ public class TextUtils {
 
     public static String welcomMessage = """
             Welcome to Menfess Bot!
-             Sebuah bot untuk mengirim pesan kepada base menfess.
+            Sebuah bot untuk mengirim pesan kepada base menfess.
             
             Untuk mendafaftar sebagai pengguna, tekan tombol dibawah ini.""";
 
@@ -35,4 +35,9 @@ public class TextUtils {
     public static String topUpFailed = "Top up gagal. Kode transaksi tidak ditemukan, Silahkan coba lagi";
 
     public static String helpTopUp = "Gunakan command /topup lalu diikuti dengan kode transaksi top up anda";
+
+    public static String helpDeleteMessage = """
+            Gunakan /delete untuk pesan yang ingin dihapus, ini akan menghapus limit anda \s
+            dan mengurangi saldo anda sebesar 1000 \s
+            """;
 }

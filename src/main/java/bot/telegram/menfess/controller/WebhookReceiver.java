@@ -4,7 +4,6 @@ import bot.telegram.menfess.entity.Transaction;
 import bot.telegram.menfess.entity.TransactionStatus;
 import bot.telegram.menfess.repository.TransactionRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,8 +17,11 @@ import java.util.Map;
 @RequestMapping("/webhook")
 public class WebhookReceiver {
 
-    @Autowired
-    private TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
+
+    public WebhookReceiver(TransactionRepository transactionRepository) {
+        this.transactionRepository = transactionRepository;
+    }
 
     @PostMapping
     public ResponseEntity<String> handleWebhook(@RequestBody Map<String, Object> payload) {

@@ -8,6 +8,7 @@ import bot.telegram.menfess.service.UserService;
 import bot.telegram.menfess.utils.command.SendCommand;
 import bot.telegram.menfess.utils.command.StartCommand;
 import bot.telegram.menfess.utils.command.TopUpCommand;
+import bot.telegram.menfess.utils.text.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -56,9 +57,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
                 handleTopUpCommand(chatId, text);
             } else if (text.contains("/delete")) {
                 handleDeleteCommand(update, chatId, text);
-            } else if (text.contains("/list")) {
-                // leesss
-            }
+            } 
         } else {
             handleCallbackQuery(update);
         }
@@ -66,33 +65,40 @@ public class TelegramBotMain extends TelegramLongPollingBot {
 
     private void handleDeleteCommand(Update ignoredUpdate, long chatId, String text) {
         if (text.equals("/delete")) {
-            sendMessage(new SendCommand().helpDeleteMessage("Silahkan masukkan id pesan yang ingin dihapus", chatId));
+            sendMessage(new SendCommand().helpDeleteMessage(TextUtils.helpDeleteMessage, chatId));
         } else {
             Messaging messaging = messageService.findMessage(text.replace("/delete ", ""));
             if (messaging != null && messaging.getMessageStatus() != MessageStatus.DELETED) {
-                Thread.startVirtualThread(() -> {
-                    messaging.setMessageStatus(MessageStatus.DELETED);
-                    messageService.saveMessage(messaging);
-                    sendMessage(SendMessage.builder()
-                            .text("Sukses Delete Message")
-                            .chatId(chatId)
-                            .build());
-                    deleteMessage(DeleteMessage.builder()
-                            .messageId((int) messaging.getMessageId())
-                            .chatId(new RulesCofiguration().getGetChannelId())
-                            .build());
-                });
+                if (userService.findUsers(chatId).getBalance() > new RulesCofiguration().getPayAmountToDelete()) {
+                    deleteMessageAndUpdateLimitAndBalance(ignoredUpdate, chatId, messaging);
+                } else {
+                    Thread.startVirtualThread(() -> sendMessage(new SendCommand().errorUsersNotHaveLimit("Anda tidak memiliki saldo", chatId)));
+                }
             } else {
-                Thread.startVirtualThread(() -> {
-                    sendMessage(SendMessage.builder()
-                            .text("Pesan tidak ditemukan")
-                            .chatId(chatId)
-                            .build());
-                });
+                Thread.startVirtualThread(() -> sendMessage(SendMessage.builder()
+                        .text("Pesan tidak ditemukan")
+                        .chatId(chatId)
+                        .build()));
 
             }
 
         }
+    }
+    private void deleteMessageAndUpdateLimitAndBalance(Update ignoredUpdate, long chatId, Messaging messaging) {
+        Thread.startVirtualThread(() -> {
+            messaging.setMessageStatus(MessageStatus.DELETED);
+            messageService.saveMessage(messaging);
+            sendMessage(SendMessage.builder()
+                    .text("Sukses Delete Message")
+                    .chatId(chatId)
+                    .build());
+            userService.changeLimitService(chatId, 0);
+            userService.deductBalance(chatId, new RulesCofiguration().getPayAmountAfterLimit());
+            deleteMessage(DeleteMessage.builder()
+                    .messageId((int) messaging.getMessageId())
+                    .chatId(new RulesCofiguration().getGetChannelId())
+                    .build());
+        });
     }
 
     private void handleStartCommand(Update update, Users isRegister) {
@@ -144,9 +150,12 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         Message messageing = sendMessage(message);
         Thread.startVirtualThread(() -> {
             userService.changeLimitService(chatId, users.getLimitService() - 1);
-            Messaging messaging1 = insertMessage(update, messageing.getMessageId());
-            log.warn("Message Id {}", messaging1.getMessageId());
-            sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + messaging1.getId() + "</code>", chatId));
+            Messaging messaging1 = null;
+            if (messageing != null) {
+                messaging1 = insertMessage(update, messageing.getMessageId());
+            }
+            log.warn("Message Id {}", messaging1 != null ? messaging1.getMessageId() : 0);
+            sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + (messaging1 != null ? messaging1.getId() : null) + "</code>", chatId));
             sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + convertToRupiah(users.getBalance()), chatId));
         });
     }
@@ -163,7 +172,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         Message messageing = sendMessage(message);
         Thread.startVirtualThread(() -> {
             userService.deductBalance(chatId, new RulesCofiguration().getPayAmountAfterLimit());
-            Messaging messaging1 = insertMessage(update, messageing.getMessageId());
+            Messaging messaging1 = insertMessage(update, messageing != null ? messageing.getMessageId() : null);
             sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + messaging1.getId() + "</code>", chatId));
             Users users = userService.findUsers(chatId);
             sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + convertToRupiah(users.getBalance()), chatId));
