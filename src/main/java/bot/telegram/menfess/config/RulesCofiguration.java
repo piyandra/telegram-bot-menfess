@@ -9,7 +9,6 @@ public class RulesCofiguration {
 
     public int limitFreeUsers = 5;
 
-    public int limitFreeUsers = 5;
     public int payAmountAfterLimit = 100;
 
     public long channelId = -1002161694809L;
