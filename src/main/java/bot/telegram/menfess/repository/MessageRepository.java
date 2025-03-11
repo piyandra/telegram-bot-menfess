@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageRepository extends JpaRepository<Messaging, String> {
 
+    Messaging findTopMessagingByUserAndTimeStampGreaterThan(long user, long timeStamp);
+
 }

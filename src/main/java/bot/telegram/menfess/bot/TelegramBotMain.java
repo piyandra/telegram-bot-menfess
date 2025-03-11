@@ -8,6 +8,8 @@ import bot.telegram.menfess.service.UserService;
 import bot.telegram.menfess.utils.command.SendCommand;
 import bot.telegram.menfess.utils.command.StartCommand;
 import bot.telegram.menfess.utils.command.TopUpCommand;
+import bot.telegram.menfess.utils.text.CurrencyUtils;
+import bot.telegram.menfess.utils.text.ConvertDateUtils;
 import bot.telegram.menfess.utils.text.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +54,12 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             if (text.equals("/start")) {
                 handleStartCommand(update, isRegister);
             } else if (text.contains("/send")) {
-                handleSendCommand(update, chatId, text);
+                Messaging messaging = handleRateLimitUsers(update);
+                if (messaging != null) {
+                    handleErrorRateLimitToSend(update, messaging.getTimeStamp());
+                } else {
+                    handleSendCommand(update, chatId, text);
+                }
             } else if (text.contains("/topup")) {
                 handleTopUpCommand(chatId, text);
             } else if (text.contains("/delete")) {
@@ -84,10 +91,12 @@ public class TelegramBotMain extends TelegramLongPollingBot {
 
         }
     }
-    private void deleteMessageAndUpdateLimitAndBalance(Update ignoredUpdate, long chatId, Messaging messaging) {
+    private void deleteMessageAndUpdateLimitAndBalance(Update update, long chatId, Messaging messaging) {
         Thread.startVirtualThread(() -> {
             messaging.setMessageStatus(MessageStatus.DELETED);
-            messageService.saveMessage(messaging);
+            messaging.setTimeStamp(System.currentTimeMillis());
+            messaging.setMessageText(update.getMessage().getText());
+            insertMessage(update, messaging.getMessageId());
             sendMessage(SendMessage.builder()
                     .text("Sukses Delete Message")
                     .chatId(chatId)
@@ -96,7 +105,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             userService.deductBalance(chatId, new RulesCofiguration().getPayAmountAfterLimit());
             deleteMessage(DeleteMessage.builder()
                     .messageId((int) messaging.getMessageId())
-                    .chatId(new RulesCofiguration().getGetChannelId())
+                    .chatId(new RulesCofiguration().getChannelId())
                     .build());
         });
     }
@@ -131,6 +140,15 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             sendMessage(new SendCommand().errorUsersNotHaveLimit("Anda tidak memiliki limit", chatId));
         }
     }
+    public Messaging handleRateLimitUsers(Update update) {
+        return messageService.findMessageBefore(update.getMessage().getChatId(), System.currentTimeMillis() - 1000L * 60 * 5);
+    }
+    public void handleErrorRateLimitToSend(Update update, long timeStammp) {
+        sendMessage(SendMessage.builder()
+                .chatId(update.getMessage().getChatId())
+                .text(ConvertDateUtils.convertToMinutesAndSecond(timeStammp + (1000L * 60 * 5)))
+                .build());
+    }
 
     private void handleSendWithLimit(Update update, long chatId, String text, Users users) {
         if (users.getLevel() == UsersLevel.FREE) {
@@ -146,7 +164,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
     }
 
     private void sendAndUpdateLimit(Update update, long chatId, String text, Users users) {
-        SendMessage message = new SendCommand().message(text.replace("/send ", ""), new RulesCofiguration().getChannelId);
+        SendMessage message = new SendCommand().message(text.replace("/send ", ""), new RulesCofiguration().channelId);
         Message messageing = sendMessage(message);
         Thread.startVirtualThread(() -> {
             userService.changeLimitService(chatId, users.getLimitService() - 1);
@@ -156,7 +174,7 @@ public class TelegramBotMain extends TelegramLongPollingBot {
             }
             log.warn("Message Id {}", messaging1 != null ? messaging1.getMessageId() : 0);
             sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + (messaging1 != null ? messaging1.getId() : null) + "</code>", chatId));
-            sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + convertToRupiah(users.getBalance()), chatId));
+            sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + CurrencyUtils.convertToCurrency(users.getBalance()), chatId));
         });
     }
 
@@ -168,14 +186,14 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         }
     }
     private void sendAndUpdateBalance(Update update, long chatId, String text) {
-        SendMessage message = new SendCommand().message(text.replace("/send ", ""), new RulesCofiguration().getChannelId);
+        SendMessage message = new SendCommand().message(text.replace("/send ", ""), new RulesCofiguration().channelId);
         Message messageing = sendMessage(message);
         Thread.startVirtualThread(() -> {
             userService.deductBalance(chatId, new RulesCofiguration().getPayAmountAfterLimit());
             Messaging messaging1 = insertMessage(update, messageing != null ? messageing.getMessageId() : null);
             sendMessage(new SendCommand().successSendingMessage("Pesan anda berhasil terkirim\nUntuk Menghapus Pesan silahkan kirim\n <code>/delete " + messaging1.getId() + "</code>", chatId));
             Users users = userService.findUsers(chatId);
-            sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + convertToRupiah(users.getBalance()), chatId));
+            sendMessage(new SendCommand().successSendingMessage("Saldo anda saat ini " + CurrencyUtils.convertToCurrency(users.getBalance()), chatId));
         });
     }
 
@@ -204,6 +222,8 @@ public class TelegramBotMain extends TelegramLongPollingBot {
                 .messageStatus(MessageStatus.SENT)
                 .user(update.getMessage().getChatId())
                 .MessageId(messageId)
+                .messageText(update.getMessage().getText())
+                .timeStamp(System.currentTimeMillis())
                 .build();
         return messageService.saveMessage(messaging);
     }
@@ -274,10 +294,6 @@ public class TelegramBotMain extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String convertToRupiah(long amount) {
-        return "Rp" + String.format("%,d", amount).replace(',', '.');
     }
     @Override
     public String getBotUsername() {
