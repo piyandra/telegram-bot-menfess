@@ -4,7 +4,6 @@ import bot.telegram.menfess.config.RulesCofiguration;
 import bot.telegram.menfess.entity.Users;
 import bot.telegram.menfess.entity.UsersLevel;
 import bot.telegram.menfess.repository.UsersRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -13,8 +12,12 @@ import java.util.Optional;
 
 @Service
 public class ResetLimit {
-    @Autowired
-    private UsersRepository usersRepository;
+
+    private final UsersRepository usersRepository;
+
+    private ResetLimit(UsersRepository usersRepository) {
+        this.usersRepository = usersRepository;
+    }
 
     @Scheduled(cron = "0 0 0 * * *")
     public void resetLimit() {

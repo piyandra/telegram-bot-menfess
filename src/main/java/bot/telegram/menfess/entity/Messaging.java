@@ -24,4 +24,8 @@ public class Messaging {
     @Enumerated(EnumType.STRING)
     private MessageStatus messageStatus;
 
+    private long timeStamp;
+
+    private String messageText;
+
 }

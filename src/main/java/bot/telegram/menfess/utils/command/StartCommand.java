@@ -2,6 +2,7 @@ package bot.telegram.menfess.utils.command;
 
 import bot.telegram.menfess.entity.Users;
 import bot.telegram.menfess.utils.keyboard.StartCommandKeyboard;
+import bot.telegram.menfess.utils.text.CurrencyUtils;
 import bot.telegram.menfess.utils.text.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -49,7 +50,7 @@ public class StartCommand {
         return EditMessageText.builder()
                 .chatId(update.getCallbackQuery().getMessage().getChatId())
                 .messageId(update.getCallbackQuery().getMessage().getMessageId())
-                .text(TextUtils.account + "\nId : " + users.getId() + "\nSaldo : " + convertToRupiah(users.getBalance()) + "\nLevel : " + users.getLevel() + "\nLimit : " + users.getLimitService())
+                .text(TextUtils.account + "\nId : " + users.getId() + "\nSaldo : " + CurrencyUtils.convertToCurrency(users.getBalance()) + "\nLevel : " + users.getLevel() + "\nLimit : " + users.getLimitService())
                 .build();
     }
     public EditMessageText helpButton(Users users,Update update) {
@@ -59,9 +60,6 @@ public class StartCommand {
                 .text("Status user anda adalah " + users.getLevel() +"\n" +TextUtils.help)
                 .parseMode("HTML")
                 .build();
-    }
-    private String convertToRupiah(long amount) {
-        return "Rp" + String.format("%,d", amount).replace(',', '.');
     }
 
 }
